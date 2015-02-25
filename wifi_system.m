@@ -12,10 +12,15 @@ for i = 1:length(file_names)
     fid = fopen([path, file_names{i}]);
     token = textscan(fid, '%d64%d64%d64%f64%d64%s\n');
        
-    data = [data; double((i-1)*ones(length(token{1}), 1)), wifiStation2idx(double(token{1})), double(token{2}), double(token{3}), double(token{4}), double(token{5}), double(name2idx(token{6}))];
+    data = [data; double((i-1)*ones(length(token{1}), 1)), wifiStation2idx(double(token{1})), double(token{2}), (10.^(double(token{2})./10))*1000, double(token{3}), double(token{4}), double(token{5}), double(name2idx(token{6}))];
 %     id_names{length(id_names):length(data)} = token{6};
     fclose(fid);
 end
+
+%% remove duplicate
+[C, IA, IC] = unique(data(:,[2, 5]), 'rows', 'stable');
+%% create data matrix without duplicate
+data = data(IA, :);
 
 
 %%
