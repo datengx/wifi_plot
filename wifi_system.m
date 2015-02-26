@@ -1,180 +1,166 @@
 clear all;
 close all;
 
-path = '/home/da/dev/wifi_plot/mrinal_wifi_dataset/wifi/';
-files = dir(path);
+if exist('nameAndIdx.mat')
+    delete('nameAndIdx.mat');
+end
+if exist('wifiStationAndIdx.mat')
+    delete('wifiStationAndIdx.mat');
+end
+
+path = '/home/mars/desktop/Wifi/yellowstone-feb25/';
+
+path_wifi = [path, 'wifi/'];
+files = dir(path_wifi);
 %% The first two are '.' and '..'
 file_names = {files(3:end).name}';
 
 data = [];
 id_names = {};
 for i = 1:length(file_names)
-    fid = fopen([path, file_names{i}]);
+    fid = fopen([path_wifi, file_names{i}]);
     token = textscan(fid, '%d64%d64%d64%f64%d64%s\n');
-       
-    data = [data; double((i-1)*ones(length(token{1}), 1)), wifiStation2idx(double(token{1})), double(token{2}), (10.^(double(token{2})./10))*1000, double(token{3}), double(token{4}), double(token{5}), double(name2idx(token{6}))];
-%     id_names{length(id_names):length(data)} = token{6};
+    
+    data = [data; double((i-1)*ones(length(token{1}), 1)), wifiStation2idx(double(token{1})), double(token{2}), (10.^(double(token{2})./10))*1e6, double(token{3})*1e-6, double(token{4}), double(token{5}), double(name2idx(token{6}))];
     fclose(fid);
 end
 
-%% remove duplicate
-[C, IA, IC] = unique(data(:,[2, 5]), 'rows', 'stable');
+%% Remove Duplicate
+[~, IA, ~] = unique(data(:,[2, 5]), 'rows', 'stable');
 %% create data matrix without duplicate
-data = data(IA, :);
-
-
-%%
-%   WIFI data processing: Plot all signal level of all the location per
-%   station
-%   Compare WIFI data collecting from linux and yellowstone
-%   MARS
-%   06/02/2015
-%
-%%
-
-clear all;
-
-%% add dataset path
-DATAPATH = ['./spot01'; './spot02'; './spot03'; './spot04'; './spot05'; './spot06'; './spot07'; './spot08'; './spot09'; './spot10'];
-file_size = [];
-file_size_ys = [];
-for text_idx = 1:size(DATAPATH, 1)
-    timestamp = dlmread(strcat(DATAPATH(text_idx,:), '/linux/timestamp.txt'));
-    file_size = [file_size, size(timestamp, 1)];
-    cd(strcat(DATAPATH(text_idx, :), '/ys'));
-    d = dir;
-    cd('../..');
-    file_size_ys = [file_size_ys, size(d, 1) - 2];
-end
-
-
-data = [];
-data_ys = [];
-
-%% Extract linux data
-%% Create a dataset
-dataset = cell(size(DATAPATH, 1),1);
-dataset_ys = cell(size(DATAPATH, 1),1);
-for text_idx = 1:size(DATAPATH, 1)
-    data = [];
-    for i = 1:file_size(text_idx)-1
-       filename = sprintf('%s/linux/%08d.txt', DATAPATH(text_idx, :), i);
-       token = dlmread(filename);
-       data = [data; token];
+unique_data = data(IA, :);
+for i=min(unique_data(:,1)):max(unique_data(:,1))
+    if sum(unique_data(:,1)==i)==0
+        continue;
     end
-    dataset{text_idx, 1} = data;
-end
-%% Extract yellowstone data
-for text_idx = 1:size(DATAPATH, 1)
-    data_ys = [];
-    for i = 1:file_size_ys(text_idx)-1
-       filename_ys = sprintf('%s/ys/%08d.txt', DATAPATH(text_idx, :), i);
-       fid_ys = fopen(filename_ys);
-       token_ys = textscan(fid_ys, '%d64%d64%d64%f64%d64%s\n');
-       data_ys = [data_ys; token_ys{1}, token_ys{2}, token_ys{3}, token_ys{4}, token_ys{5}];
-       fclose(fid_ys);
-    end
-    dataset_ys{text_idx, 1} = data_ys;
-end
-%% Get linux station
-station = cell(size(DATAPATH, 1),1);
-station_ys = cell(size(DATAPATH, 1),1);
-for text_idx = 1:size(DATAPATH, 1)
-    data = dataset{text_idx, 1};
-    data = data(:,1);
-    data = unique(data);
-    station{text_idx, 1} = data(2:end);
-end
-%% Get yellowstone station
-for text_idx = 1:size(DATAPATH, 1)
-    data_ys = dataset_ys{text_idx, 1};
-    data_ys = data_ys(:,1);
-    data_ys = unique(data_ys); % unique station
-    station_ys{text_idx, 1} = data_ys(1:end);
-end
-%% Find out the common station
-common_station = station{1, 1};
-common_station_ys = station_ys{1, 1};
-for text_idx = 1:size(DATAPATH, 1)-1
-    common_station = union(common_station, station{text_idx+1, 1});
-    common_station_ys = union(common_station_ys, station_ys{text_idx+1, 1});
+    unique_data(unique_data(:,1)==i & unique_data(:,5) < (max(unique_data(unique_data(:,1)==i,5)) - 1), :) = [];
 end
 
-common_station_overall = union(common_station, common_station_ys);
-%% label all the station
-len = length(common_station_overall);
-station_label = (1:len)';
-station_overall_and_label = [common_station_overall, station_label]; % station (first column) with label (second column)
-save('station_overall_and_label.mat', 'station_overall_and_label');
-load('station_overall_and_label.mat');
+min_count = 5;
+station_freq = find(hist(unique_data(:,2), max(unique_data(:,2))) <= min_count);
+for i = 1:length(station_freq)
+    unique_data(unique_data(:,2)==station_freq(i), :) = [];
+end
+[C,~,ic] = unique(unique_data(:,2),'rows', 'stable');
+unique_data(:,2) = ic;      %% unique_data(:,2) == C(ic)
 
-full_data = [];
-for x = 1:size(station_overall_and_label, 1)
-    overall_data = [];
-    overall_data_ys = [];
-    station_find = common_station_overall(x);
-    station_find_ys = station_find;
+wifi_timestamps = mean(unique_data(:,6)-unique_data(:,5))+unique_data(:,5);     %todo compare max
+% plot(diff(unique_data(:,6)),'b-o'),hold on, plot(diff(unique_data(:,5)), 'r-x')
 
-    %% Calculate average signal level
-    for text_idx = 1:size(DATAPATH, 1)
-        %% Creating plot for linux
-        data = dataset{text_idx, 1};
-        idx = find(data(:,1) == station_find);
-        data = data(idx,:);
-        data = data(:,2);
-        data = data(data<0);
-        data = data(data>-100);
+%% Time Sync
+imu = dlmread([path, 'imu_interpolated.txt']);
+imu = imu(:,1:2);
+imu(:,2)= imu(:,2)*1e-3;
+diff = imu(:,1)-imu(:,2);
+mean_diff = mean(diff);
+std_diff = std(diff);
+mean_diff = mean(diff(diff < (mean_diff+2*std_diff) & diff > (mean_diff - 2*std_diff)));
 
-        %% Creating plot for yellowstone
-        data_ys = dataset_ys{text_idx, 1};
-        idx_ys = find(data_ys(:,1) == station_find_ys);
-        data_ys = data_ys(idx_ys, :);
-        data_ys = data_ys(:,2);
-        data_ys = data_ys(data_ys<0);
-        data_ys = data_ys(data_ys>-100);
+wifi_timestamps = wifi_timestamps + mean_diff;
 
-        %% linux WIFI level signal
-        overall_data = [overall_data; [ones(length(data),1)*text_idx, data]];
-        %% yellowstone level signal
-        overall_data_ys = [overall_data_ys; [ones(length(data_ys),1)*text_idx, data_ys]];
+%% Process data
+g_ba_ci = BA_interp_pos( path );
 
+fid = fopen([path, 'timestamps.txt']);
+token = textscan(fid, '%s%f64\n');
+img_timestamps = token{2};
+
+N = unique_data(end,1) + 1;
+Ns = max(unique_data(:,2));
+init_ba_indx = 5;
+test_data_num = 2;
+dim = 3;
+
+if dim == 2
+    A = zeros(2*N, 2*Ns);
+    b = zeros(2*N, 1);
+    timestamps = zeros(N, 1);
+    j = 1;
+    
+    for i = 1:N
+%       curr_data = unique_data(unique_data(:,1)==i-1, [2,3]);curr_data(:,2)=-curr_data(:,2);
+        curr_data = unique_data(unique_data(:,1)==i-1, [2,4]);
+        if isempty(curr_data)
+            continue;
+        end
+        
+        timestamps(j) = mean(wifi_timestamps(unique_data(:,1)==i-1));
+        [~,inds] = sort(abs(img_timestamps - timestamps(j)));
+        inds = inds(1:2);
+        times = img_timestamps(inds);
+        c1_p_ci = (g_ba_ci(:,inds(1)-init_ba_indx+1) * abs(times(2)-timestamps(j)) + g_ba_ci(:,inds(2)-init_ba_indx+1) * abs(times(1)-timestamps(j))) / abs(times(2)-times(1));
+        pt_xy = c1_p_ci([1,2]);     %xy
+        b(2*j-1:2*j) = pt_xy;
+        
+        sig = zeros(1, Ns);
+        sig(curr_data(:,1)) = curr_data(:,2);
+        sig_normalized = sig / norm(sig);
+        
+        A(2*j-1, 1:Ns) = sig_normalized;
+        A(2*j, Ns+1:end) = sig_normalized;
+        j = j+1;
     end
     
-    station_vec = ones(length(overall_data), 1)*double(returnLabelWithStation(station_find));
-    station_vec_ys = ones(length(overall_data_ys), 1)*double(returnLabelWithStation(station_find_ys));
-%     full_data = [full_data; station_vec, overall_data];
-    full_data = [full_data; station_vec_ys, overall_data_ys];
-end
-  
-st_1st = min(full_data(:,1));
-st_last = max(full_data(:,1));
-sig_normalized = zeros(max(full_data(:,1)), max(full_data(:,2))-min(full_data(:,2))+1);
-st_len = zeros(10,1);
-for i=min(full_data(:,2)):max(full_data(:,2))
-    sig = zeros(st_last, 1);
-    ind = full_data(:,2)==i;
-    dd = full_data(ind, [1,3]);
-%     [~,index] = sort(dd(:,1));
-%     dd= dd(index,:);
-    stations = unique(dd(:,1));
-    st_len(i)=length(stations);
-    for j = 1:length(stations)
-        strengths = dd(dd(:,1)==stations(j), 2);
-        avg_strength = mean(strengths);
-        sig(stations(j)) = avg_strength;
+    N = j-1;
+    A(2*N+1:end, :) = [];
+    b(2*N+1:end) = [];
+    timestamps(N+1:end) = [];
+
+    start_ind = test_data_num*2+1;
+    x = (A(start_ind:end,:)'*A(start_ind:end,:))\(A(start_ind:end,:)'*b(start_ind:end));
+    % model = reshape(x, [2 length(x)/2]);
+    plot(g_ba_ci(1,:), g_ba_ci(2,:),'r')
+    
+    for i=1:test_data_num
+        pt = A(2*i-1:2*i, :)*x;
+        hold on, plot(pt(1),pt(2),'go')
+        plot(b(2*i-1),b(2*i),'bx')
     end
-    sig_normalized(:,i) = sig / norm(sig);
-end
+    
+else
+    A = zeros(3*N, 3*Ns);
+    b = zeros(3*N, 1);
+    timestamps = zeros(N, 1);
+    j = 1;
+    
+    for i = 1:N
+        % curr_data = unique_data(unique_data(:,1)==i-1, [2,3]);curr_data(:,2)=-curr_data(:,2);
+        curr_data = unique_data(unique_data(:,1)==i-1, [2,4]);
+        if isempty(curr_data)
+            continue;
+        end
+        
+        timestamps(j) = mean(wifi_timestamps(unique_data(:,1)==i-1));
+        [~,inds] = sort(abs(img_timestamps - timestamps(j)));
+        inds = inds(1:2);
+        times = img_timestamps(inds);
+        c1_p_ci = (g_ba_ci(:,inds(1)-init_ba_indx+1) * abs(times(2)-timestamps(j)) + g_ba_ci(:,inds(2)-init_ba_indx+1) * abs(times(1)-timestamps(j))) / abs(times(2)-times(1));
+        pt_xy = c1_p_ci([1,2, 3]);     %xyz
+        b(3*j-2:3*j) = pt_xy;
+        
+        sig = zeros(1, Ns);
+        sig(curr_data(:,1)) = curr_data(:,2);
+        sig_normalized = sig / norm(sig);
+        
+        A(3*j-2, 1:Ns) = sig_normalized;
+        A(3*j-1, Ns+1:2*Ns) = sig_normalized;
+        A(3*j, 2*Ns+1:3*Ns) = sig_normalized;
+        j = j+1;
+    end
+    
+    N = j-1;
+    A(3*N+1:end, :) = [];
+    b(3*N+1:end) = [];
+    timestamps(N+1:end) = [];
 
-ss = zeros(max(full_data(:,2))-min(full_data(:,2))+1);
-for i=min(full_data(:,2)):max(full_data(:,2))
-    for j=min(full_data(:,2)):max(full_data(:,2))
-        ss(i, j) = sig_normalized(:,i)' * sig_normalized(:,j);
+    start_ind = test_data_num*3+1;
+    x = (A(start_ind:end,:)'*A(start_ind:end,:))\(A(start_ind:end,:)'*b(start_ind:end));
+    % model = reshape(x, [3 length(x)/3]);
+    plot3(g_ba_ci(1,:), g_ba_ci(2,:), g_ba_ci(3,:),'r')
+    
+    for i=1:test_data_num+5
+        pt = A(3*i-2:3*i, :)*x;
+        hold on, plot3(pt(1),pt(2), pt(3),'go')
+        plot3(b(3*i-2),b(3*i-1),b(3*i),'bx')
     end
 end
-
-ssp = ss - eye(max(full_data(:,2))-min(full_data(:,2))+1);
-rank(ss)
-eigs = flip(eig(ss));
-plot(eigs)
-
