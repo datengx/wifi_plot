@@ -81,7 +81,8 @@ if dim == 2
     j = 1;
     
     for i = 1:N
-      curr_data = unique_data(unique_data(:,1)==i-1, [2,3]);curr_data(:,2)=-curr_data(:,2);
+      curr_data = unique_data(unique_data(:,1)==i-1, [2,3,7]); 
+      curr_data(:,2)=10.^-((curr_data(:,2)+20*log(curr_data(:,3)))/20);
 %         curr_data = unique_data(unique_data(:,1)==i-1, [2,4]);
         if isempty(curr_data)
             continue;
@@ -119,10 +120,10 @@ if dim == 2
     plot(g_ba_ci(1,:), g_ba_ci(2,:),'r')
     
     for i=1:N
-%         pt = A(2*i-1:2*i, :)*x;
-%         hold on, plot(pt(1),pt(2),'go')
+        pt = A(2*i-1:2*i, :)*x;
+        hold on, plot(pt(1),pt(2),'go')
         hold on, plot(b(2*i-1),b(2*i),'bx')
-%         plot([pt(1), b(2*i-1)], [pt(2), b(2*i)])
+        plot([pt(1), b(2*i-1)], [pt(2), b(2*i)])
     end
     
     sig_mat = A(1:2:end, 1:Ns);
