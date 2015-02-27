@@ -2,7 +2,7 @@ function g_ba_ci = BA_interp_pos( path )
 
 addpath('./robotics3D/');
 
-st = csvread([path, 'gt_result_multi_level_xkk.txt']);
+st = csvread([path, 'xkk_msckf.txt']);
 states = reshape(st, [16, length(st)/16]);
 g_p_i = states(14:16, :);
 g_ba_ci = g_p_i(:,1);
