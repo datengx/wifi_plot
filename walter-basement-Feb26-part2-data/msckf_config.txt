@@ -1,0 +1,232 @@
+## 1)the quality of the rriharris corners (look cornerExtractor.cc
+## 2)@ sharedData/ekfdata.h N_CLONES NUMBER OF CLONES
+## 3)@ sharedData/ekfdata.h N_TRACKS MAXIMUM NUMBER OF HARRIS CORNERS INITIALIZED AT EACH IMAGE.
+
+## DATA DIRECTORIES
+log_for_ba = true
+log_binary = false
+vt_tracks_file = ""
+img_directory = /media/mars/DATA/datasets/walter-basement-Feb26-part2/data/
+imu_directory = /media/mars/DATA/datasets/walter-basement-Feb26-part2/imu_interpolated.txt
+data_is_superframes = false
+tree_file = /media/mars/DATA/datasets/yellowstone-feb-10/1/ORB_FAST.tree
+weights_file = ""
+max_tree_matches = 5
+max_tree_features = 0
+seconds_to_loop_closure = 0
+minimum_match_distance = 0
+features_to_insert_per_img = 0
+tree_blurriness_threshold = 0
+tree_match_threshold = 0
+image_query_rate = 5
+max_position_distance = 0
+min_projection_distance = 0
+vt_use_klt  = false
+vt_feature_type = ORB #FREAK
+inliers_for_loop_closure = 20
+inlier_track_file = /media/mars/DATA/datasets/yellowstone-feb-19/klt-tracks.txt
+log_inlier_tracks = true
+use_dog_instead_of_harris = false
+dog_folder = ""
+feature_tracks_type = KLT
+
+## STATE LOGGING
+should_log_states = true
+
+ # for desktop wifireciever
+state_logging_dir = /media/mars/DATA/datasets/walter-yellowstone/
+state_logging_file = /media/mars/DATA/datasets/yellowstone-feb-19/state_log_msckf.txt
+
+## Initial state logging for MATLAB
+should_log_initial_state = false
+initial_state_file = /home/joe/UMN/desktop_receiver/states/init_state.txt
+
+## Initial covariance logging for MATLAB
+should_log_initial_covariance = false
+initial_covariance_file = /home/joe/UMN/desktop_receiver/states/init_cov.txt
+
+## TRACKING LOGGING
+
+should_log_tracks = false 
+tracks_folder = /home/joe/UMN/desktop_receiver/states/tracks/
+
+## PERFORMANCE_LOGGING
+performance_log_folder = /home/joe/UMN/desktop_receiver/states/timings/
+
+should_log_triangulation = false
+triangulation_logging_file = /home/joe/UMN/desktop_receiver/states/triangulations.txt
+maximum_features = 30
+
+ask_user_to_save_biases_ = true
+ask_user_to_save_extrinsics_ = true
+
+load_biases_and_their_covariances = true
+load_extrinsics_and_their_covariances = true
+
+save_measurements_for_matlab = false
+
+maximum_camera_velocity_for_entering_hover = 0.1
+minimum_translation_for_generic_motion = 0.10
+maximum_translation_for_hovering = 0.18
+zero_velocity_sigma = 0.2
+initial_parameters_counter = 0
+
+klt_image_period = 2
+imu_camera_initial_time_offset = 0 
+
+
+###############################
+## STATE CLONING
+###############################
+
+maximum_number_of_imu_measurements_between_cloned_poses = 24
+clone_time_dis_thres = 0.22 # Meters
+clone_time_rot_thres = 5  # Degrees
+
+###############################
+## RUN ONLINE OR OFFLINE
+###############################
+online_camera = false
+
+
+time_sync_random_walk_sigma = 0.0
+time_sync_initial_sigma = 0.0
+
+rolling_shutter_random_walk_sigma = 0
+rolling_shutter_initial_sigma = 0.0
+
+initial_time_sync = 0.0
+initial_rolling_shutter = 0
+
+tracked_images_folder = tracked_images/
+logged_imu_folder = imu/
+
+######################
+##  GRAVITY NORM
+######################
+### TOYOTA TEMA CALIFORNIA
+##gravity =  9.8205565670
+### MINNEAPOLIS
+gravity = 9.822454267004405
+### Tokyo Big Sight
+###gravity =  9.8203064522
+
+
+##################################
+## CORNER EXTRACTION PARAMETERS ##
+##################################
+ 
+harris_max_corners = 200
+harris_quality_level = 0.0035
+harris_min_distance = 10
+harris_eig_block_size = 5
+harris_use_harris = false
+harris_perform_subpixel_refinement = false
+harris_subpixel_refinement_iterations = 3
+harris_subpixel_refinement_block = 7;
+
+
+#########################
+## TRACKING PARAMETERS ##
+#########################
+
+KLT_window_size = 15
+KLT_pyramid_height = 2
+KLT_iterations = 20
+prediction_angle_threshold = 0.0 # minimum angle between frames to use feature prediction
+subpix_refinement_window_size = 5
+subpix_refinement_iterations = 1
+
+#######################
+## RANSAC PARAMETERS ##
+#######################
+
+ransac_hypotheses = 60
+ransac_error_type = sampson 	#either 'algebraic' or 'sampson'
+sampson_error_tolerance = 1e-3
+algebraic_error_tolerance = 3e-4
+sufficient_angle = 1.3
+angle_error_tolerance = 0.5
+ransac_outlier_probability = 0.1
+ransac_rejection_percent = 0.3
+ransac_acceptance_percent = 0.7
+zero_pt_error_tolerance = 0.3
+gravity_plus_two_point_algebraic_error_tolerance = 8
+
+##################
+### WIFI PARAMS ##
+##################
+
+send_states_over_wifi = true
+receiver_ip = 10.0.13.159
+wifi_port_number = 9009
+state_string_length = 136
+
+#####################
+###IMU INTRINSICS####
+#####################
+
+imu_dt = 0.01
+#imu_noise = [4.0e-4, 3.16e-5, 1e-3, 2.2e-4] 
+ imu_noise = [5.3e-5, 1.4e-4, 1.88e-3, 1.2e-2]
+omega_scale_factor_x = 1.0
+omega_scale_factor_y = 1.0
+omega_scale_factor_z = 1.0
+
+initial_accel_bias = [-0.379847  -0.30961 -0.598058]# [-0.439445 -0.435546 -0.274426] #[0.0536224  0.137594 -0.360005];# [0.1, -0.0005, 0.0]
+v_and_ba_sigma = 0.01
+initial_gyro_bias = [ -0.00144614  -0.00118132 -0.000894534 ]
+bg_sigma = 0.0035 
+#########################
+### CAMERA INTRINSICS ###
+#########################
+
+camera_dimension_y = 480
+camera_dimension_x = 640
+
+
+fc = [259.058 258.762]# fc = [252.426 251.85] #fc = [255.065, 255.788]
+cc = [312.285 249.768] #cc = [319.72 242.862] #cc = [317.07, 243.214]
+kc = [0.948435, 0, 0, 0, 0] #kc = [0.904318] #kc = [0.920098, 0.0, 0.0, 0.0, 0.00000]
+
+camera_sigma = 1.4
+
+########################################
+## EXTRINSIC CALIBRATION PARAMETERS   ##
+########################################
+
+imu_q_cam_sigma =  1.4
+imu_p_cam_sigma = 0.3
+#imu_q_cam = [0.703522803571063, 0.709329371354459, -0.031155142353013, 0.030608248796093]
+imu_q_cam = [0.702663419415419  -0.702663419415419   0.079146187624107   0.079146187624107]
+#imu_p_cam = [-0.00279479, 0.011298, -0.0030212]
+imu_p_cam = [0.001200000000000  -0.058997000000000  -0.001572500000000];
+########################
+### FILTER PARAMETERS ##
+########################
+
+state_and_covarience_budget = 50
+state_only_budget = 800
+
+maximum_clones_in_sliding_window = 15
+maximum_features_per_processing = 850
+
+maximum_active_features_inside_fov = 0
+maximum_inactive_features_outside_fov = 0
+maximum_inactive_features_inside_fov = 0
+maximum_slam_reobservations = 0
+relocalization_threshold = 100002
+
+#######################################
+### IMU BIASES & EXTRINSICS GUESSES ###
+#######################################
+
+extrinsics_state_file = /home/dimitris/Downloads/joe_dataset_1/extrinsics_state_file.txt
+extrinsics_covariance_file = /home/dimitris/Downloads/joe_dataset_1/extrinsics_covariance_file.txt
+
+bias_state_file = /home/dimitris/Downloads/joe_dataset_1/bias_state_file.txt
+bias_covariance_file = /home/dimitris/Downloads/joe_dataset_1/bias_covariance_file.txt
+
+starting_image = 10
+clone_on_depth_images = false
+KLT_frequency = 0
