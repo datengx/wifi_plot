@@ -109,7 +109,7 @@ init_ba_indx = 5;
 
 A = [];
 b = [];
-xyzf = {};
+xyzfr = {};
 mean_zs = [];
 
 Pj = -30;
@@ -124,8 +124,8 @@ for i = 1:Ns
     end
     
     timestamps = wifi_timestamps(unique_data(:,2)==i);
-    x_loc = zeros(length(timestamps), 1);
-    y_loc = zeros(length(timestamps), 1);
+    xi = zeros(length(timestamps), 1);
+    yi = zeros(length(timestamps), 1);
     z_loc = zeros(length(timestamps), 1);
     
     for j = 1:length(timestamps)
@@ -140,20 +140,20 @@ for i = 1:Ns
         else
             c1_p_ci = (g_ba_ci(:,inds(1)-init_ba_indx+1) * abs(times(2)-timestamps(j)) + g_ba_ci(:,inds(2)-init_ba_indx+1) * abs(times(1)-timestamps(j))) / abs(times(2)-times(1));
         end
-        x_loc(j) = c1_p_ci(1);
-        y_loc(j) = c1_p_ci(2);
+        xi(j) = c1_p_ci(1);
+        yi(j) = c1_p_ci(2);
         z_loc(j) = c1_p_ci(3);
     end
 
-    xyzf{i} = {[x_loc, y_loc, z_loc, curr_data(:,3), curr_data(:,2)]};
+    xyzfr{i} = {[xi, yi, z_loc, curr_data(:,3), curr_data(:,2), curr_data(:,1)]};
     
-    x_loc_sq = x_loc .* x_loc;
-    y_loc_sq = y_loc .* y_loc;
+    x_loc_sq = xi .* xi;
+    y_loc_sq = yi .* yi;
     z_loc_sq = z_loc .* z_loc;
 
     a_vec = (x_loc_sq - mean(x_loc_sq)) + (y_loc_sq - mean(y_loc_sq)) + (z_loc_sq - mean(z_loc_sq));
-    b_vec = 2 * (x_loc - mean(x_loc));
-    c_vec = 2 * (y_loc - mean(y_loc));
+    b_vec = 2 * (xi - mean(xi));
+    c_vec = 2 * (yi - mean(yi));
     d_vec = 2 * (z_loc - mean(z_loc));
     e_vec = d_sq - mean(d_sq);
     mean_zs = [mean_zs, mean(z_loc)];
@@ -171,6 +171,8 @@ if median_scale < 0
     median_scale = 1;
 end
 x(3:4:end) = x(3:4:end) * median_scale - mean_z;
+x(4:4:end) = Pj;
+x(length(x)+1) = gamma;
 
 figure, axis equal, hold on
 plot3(g_ba_ci(1,:), g_ba_ci(2,:), g_ba_ci(3,:),'r')
@@ -179,44 +181,81 @@ for j = 1:length(ap_loc)
 end
 
 err = 1e6;
-while err > 1e-3
-    J = zeros(N, 4*Ns+1);
-    r = zeros(N,1);
+prev_err = 1e9;
+prev_x = x;
+while (err < prev_err) && (prev_err-err > 1e-3)
+%     J = zeros(N, 4*Ns+1);
+    J = [];
+%     r = zeros(N,1);
+    r = [];
     count = zeros(N,1);
     
-    for i = 1:Ns
-        xyzf_curr = cell2mat(xyzf{i});
-        x_loc = xyzf_curr(:,1);
-        y_loc = xyzf_curr(:,2);
-        f_ap = xyzf_curr(:,4);
-        index = xyzf_curr(:,5);
+    for j = 1:Ns
+        xyzfr_curr = cell2mat(xyzfr{j});
+        xi = xyzfr_curr(:,1);
+        yi = xyzfr_curr(:,2);
+        fjk = xyzfr_curr(:,4);
+%         index = xyzfr_curr(:,5);
+        rssi = xyzfr_curr(:,6);
         
-        xj = x(4*i-3);
-        yj = x(4*i-2);
-        zj = x(4*i-1);
+        xj = x(4*j-3);
+        yj = x(4*j-2);
+        zj = x(4*j-1);
+        Pj = x(4*j);
+        gamma = x(end);
+        dij = sqrt((xj-xi).*(xj-xi) + (yj-yi).*(yj-yi) + zj.*zj);
         
-        Jx = -2 * (x_loc - xj);
-        Jy = -2 * (y_loc - yj);
-        Jw = -log(10)/10.0 * d_sq * (10^(wj/10));
+        Jx = 2 * (xj - xi) ./ dij;
+        Jy = 2 * (yj - yi) ./ dij;
+        Jz = 2 * zj ./ dij;
+        dd = 10 .^ ((Pj - rssi) / 10 / gamma);
+        JP = -log(10)/10.0/gamma ./ fjk .* dd;
+        Jn = log(10)/10.0/gamma/gamma ./ fjk .* dd;
         
-        J(index, 3*i-2) = Jx;
-        J(index, 3*i-1) = Jy;
-        J(index, 3*i) = Jw;
+%         J(index, 4*j-3) = J(index, 4*j-3) + Jx;
+%         J(index, 4*j-2) = J(index, 4*j-2) + Jy;
+%         J(index, 4*j-1) = J(index, 4*j-1) + Jz;
+%         J(index, 4*j) = J(index, 4*j) + JP;
+%         J(index, end) = J(index, end) + Jn;
+%         
+%         r(index) = r(index) + dij - dd ./ fjk;
+%         count(index) = count(index) + 1;
+        J_temp = zeros(length(Jx), 4*Ns+1);
+        J_temp(:,4*j-3) = Jx;
+        J_temp(:,4*j-2) = Jy;
+        J_temp(:,4*j-1) = Jz;
+        J_temp(:,4*j) = JP;
+        J_temp(:,end) = Jn;
         
-        r(index) = r(index) + (x_loc-xj).^2 + (y_loc-yj).^2 - (10^(wj/10)) .* d_sq;
-        count(index) = count(index) + 1;
+        r_temp = dij - dd ./ fjk;
+        J = [J; J_temp];
+        r = [r; r_temp];
     end
     
-    r = r ./ count;
+%     r = r ./ count;
     dx = (J'*J)\(J'*r);
     
+    prev_x = x;
     x = x + dx;
-    err = sum(abs(r))
+    prev_err = err;
+    err = sum(abs(r)) / length(r)
     
-    ap_loc = reshape(x, 3, length(x)/3);
-    figure, axis equal, hold on
-    plot(g_ba_ci(1,:), g_ba_ci(2,:),'r')
-    for j = 1:length(ap_loc)
-        plot(ap_loc(1,j), ap_loc(2,j), 'bx')
-    end
+%     ap_loc = reshape(x(1:end-1), 4, length(x(1:end-1))/4);
+%     figure, axis equal, hold on
+%     plot3(g_ba_ci(1,:), g_ba_ci(2,:), zeros(1,length(g_ba_ci)),'r')
+%     for j = 1:length(ap_loc)
+%         plot3(ap_loc(1,j), ap_loc(2,j), ap_loc(3,j), 'bx')
+%     end
+%     keyboard
+end
+
+if err > prev_err
+    x = prev_x;
+end
+
+ap_loc = reshape(x(1:end-1), 4, length(x(1:end-1))/4);
+figure, axis equal, hold on
+plot3(g_ba_ci(1,:), g_ba_ci(2,:), zeros(1,length(g_ba_ci)),'r')
+for j = 1:length(ap_loc)
+    plot3(ap_loc(1,j), ap_loc(2,j), ap_loc(3,j), 'bx')
 end

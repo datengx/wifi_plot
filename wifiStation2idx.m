@@ -12,7 +12,7 @@ end
 idx = [];
 
 for j = 1:size(wifiStation,1)
-    wifiStation(j,1) = bitand(uint64(wifiStation(j,1)), uint64(hex2dec('fffffffffff0')), 'uint64');
+    wifiStation(j,1) = bitand(uint64(wifiStation(j,1)), uint64(hex2dec('ffffffffffc0')), 'uint64');
     if ~isempty(wifiStationAndIdx)
 %         i = find(wifiStationAndIdx(:,1)==wifiStation(j,1));
         i = find(abs(wifiStationAndIdx(:,1)-wifiStation(j,1))<=16);
