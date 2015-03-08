@@ -166,12 +166,14 @@ D = 10*log10( sqrt((unique_data(:,6)-unique_data(:,9)).^2 ...
 
 n_A = [D,-ones(N,1)] \ (-R)
 plot(sort(D),-n_A(1)*sort(D)+n_A(2))
+[m, b] = TheilSen([D,R])
+hold on, plot(sort(D),m*sort(D)+b)
 hold on,plot(D,R,'.')
 
-figure, axis equal, hold on
-plot3(g_ba_ci(1,:), g_ba_ci(2,:), g_ba_ci(3,:),'r')
-%% Plot WIFI position on trajectory
-plot3(idAndPosition(:,2),idAndPosition(:,3),idAndPosition(:,4),'go')
+% figure, axis equal, hold on
+% plot3(g_ba_ci(1,:), g_ba_ci(2,:), g_ba_ci(3,:),'r')
+% %% Plot WIFI position on trajectory
+% plot3(idAndPosition(:,2),idAndPosition(:,3),idAndPosition(:,4),'go')
 
 
 % ap_ids = unique(unique_data(:,2));
