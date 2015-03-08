@@ -141,13 +141,13 @@ end
 unique_data = temp_data;
 
 %% Position of WIFI station in the basement
-idAndPosition = [5, -2.66,    11.8994, 1.2192;...
-                 6,  13.106, -19.62,   1.2192;...
-                10, -15.27,  -13.22,   1.1684;...
-                14, -15.6179,-32.029,  1.27;...
-                20, -24.054, -2.66,    1.1684;...
-                21, -47.34,  -11.22,   1.4732;...
-                22, -45.58,  -27.72,   1.4982];
+idAndPosition = [5,  11.48,  -4.487,  1.2192;...
+                 6, -20.531,  10.533, 1.2192;...
+                10, -13.887, -16.508, 1.1684;...
+                14, -32.955, -16.996, 1.27;...
+                20, -3.84,   -24.83,  1.1684;...
+                21, -12.17,  -47.06,  1.4732;...
+                22, -28.98,  -45.769, 1.4982];
             
 %% Least square to solve n and A
 [N,M] = size(unique_data);
@@ -155,7 +155,7 @@ unique_data = [unique_data,zeros(N,3)];
 % z_s_avg = unique_data(:,8)/N;
 for k = 1:N
     unique_data(k,9:11) = idAndPosition(...
-                         idAndPosition(:,1) == unique_data(k,2),[3,2,4]);
+                         idAndPosition(:,1) == unique_data(k,2),[2,3,4]);
 end
 
 R = unique_data(:,3);
@@ -168,8 +168,12 @@ n_A = [D,-ones(N,1)] \ (-R)
 plot(sort(D),-n_A(1)*sort(D)+n_A(2))
 hold on,plot(D,R,'.')
 
-% figure, axis equal, hold on
-% plot3(g_ba_ci(1,:), g_ba_ci(2,:), g_ba_ci(3,:),'r')
+figure, axis equal, hold on
+plot3(g_ba_ci(1,:), g_ba_ci(2,:), g_ba_ci(3,:),'r')
+%% Plot WIFI position on trajectory
+plot3(idAndPosition(:,2),idAndPosition(:,3),idAndPosition(:,4),'go')
+
+
 % ap_ids = unique(unique_data(:,2));
 % colors = jet(length(ap_ids));
 % for i = 7
