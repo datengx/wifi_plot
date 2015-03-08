@@ -46,7 +46,7 @@ end
 % f_min = min(unique_data(:,7));
 % unique_data(:,7) = unique_data(:,7) / f_min;
 
-unique_data(unique_data(:,3)<=-85,:) = [];
+% unique_data(unique_data(:,3)<=-85,:) = [];
 temp_data = [];
 n = [];
 % j = 1;
@@ -63,7 +63,7 @@ for i = 1:unique_data(end,1)
         ap_data = curr_data(curr_data(:,2)==aps(k),:);
         freqs = unique(ap_data(:,6));
         
-        for l = 1:length(freqs)
+        for l = 1%:length(freqs)
             freq_data = ap_data(ap_data(:,6)==freqs(l), :);
             median_freq_data = median(freq_data,1);
             temp_data = [temp_data; median_freq_data];
@@ -155,7 +155,7 @@ unique_data = [unique_data,zeros(N,3)];
 % z_s_avg = unique_data(:,8)/N;
 for k = 1:N
     unique_data(k,9:11) = idAndPosition(...
-                         idAndPosition(:,1) == unique_data(k,2),2:4);
+                         idAndPosition(:,1) == unique_data(k,2),[3,2,4]);
 end
 
 R = unique_data(:,3);
@@ -165,6 +165,8 @@ D = 10*log10( sqrt((unique_data(:,6)-unique_data(:,9)).^2 ...
                .* unique_data(:,4));
 
 n_A = [D,-ones(N,1)] \ (-R)
+plot(sort(D),-n_A(1)*sort(D)+n_A(2))
+hold on,plot(D,R,'.')
 
 % figure, axis equal, hold on
 % plot3(g_ba_ci(1,:), g_ba_ci(2,:), g_ba_ci(3,:),'r')
@@ -188,4 +190,4 @@ n_A = [D,-ones(N,1)] \ (-R)
 % %         scatter3(curr_data(curr_data(:,4)==freqs(l),6),curr_data(curr_data(:,4)==freqs(l),7),curr_data(curr_data(:,4)==freqs(l),3),'MarkerEdgeColor', colors(l*floor(size(colors,1)/2),:), 'Marker', '.')
 % %     end
 % end
-
+% 
