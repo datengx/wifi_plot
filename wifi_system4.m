@@ -140,26 +140,52 @@ for i = 1:length(basement_ap_ids)
 end
 unique_data = temp_data;
 
-figure, axis equal, hold on
-plot3(g_ba_ci(1,:), g_ba_ci(2,:), g_ba_ci(3,:),'r')
-ap_ids = unique(unique_data(:,2));
-colors = jet(length(ap_ids));
-for i = 7
-    j = ap_ids(i);
-    curr_data = unique_data(unique_data(:,2)==j,:);
-    freqs = unique(curr_data(:,4));
-    for k = 1:size(curr_data,1)
-        if curr_data(k,4) == freqs(1)
-            continue;
-        end
-        d = 10.^(-curr_data(k,3)/19) *.001;
-        circle(curr_data(k,6), curr_data(k,7), d);
-    end
-    scatter3(curr_data(:,6), curr_data(:,7), curr_data(:,8)+2*i, 'MarkerEdgeColor', colors(i,:), 'Marker', 'x')
-
-%     figure, hold on, axis equal
-%     for l = 1:length(freqs)
-%         scatter3(curr_data(curr_data(:,4)==freqs(l),6),curr_data(curr_data(:,4)==freqs(l),7),curr_data(curr_data(:,4)==freqs(l),3),'MarkerEdgeColor', colors(l*floor(size(colors,1)/2),:), 'Marker', '.')
-%     end
+%% Position of WIFI station in the basement
+idAndPosition = [5, -2.66,    11.8994, 1.2192;...
+                 6,  13.106, -19.62,   1.2192;...
+                10, -15.27,  -13.22,   1.1684;...
+                14, -15.6179,-32.029,  1.27;...
+                20, -24.054, -2.66,    1.1684;...
+                21, -47.34,  -11.22,   1.4732;...
+                22, -45.58,  -27.72,   1.4982];
+            
+%% Least square to solve n and A
+[N,M] = size(unique_data);
+unique_data = [unique_data,zeros(N,3)];
+% z_s_avg = unique_data(:,8)/N;
+for k = 1:N
+    unique_data(k,9:11) = idAndPosition(...
+                         idAndPosition(:,1) == unique_data(k,2),2:4);
 end
+
+R = unique_data(:,3);
+D = 10*log10( sqrt((unique_data(:,6)-unique_data(:,9)).^2 ...
+                 + (unique_data(:,7)-unique_data(:,10)).^2 ...
+                 + (unique_data(:,8)-unique_data(:,11)).^2)...
+               .* unique_data(:,4));
+
+n_A = [D,-ones(N,1)] \ (-R)
+
+% figure, axis equal, hold on
+% plot3(g_ba_ci(1,:), g_ba_ci(2,:), g_ba_ci(3,:),'r')
+% ap_ids = unique(unique_data(:,2));
+% colors = jet(length(ap_ids));
+% for i = 7
+%     j = ap_ids(i);
+%     curr_data = unique_data(unique_data(:,2)==j,:);
+%     freqs = unique(curr_data(:,4));
+%     for k = 1:size(curr_data,1)
+%         if curr_data(k,4) == freqs(1)
+%             continue;
+%         end
+%         d = 10.^(-curr_data(k,3)/19) *.001;
+%         circle(curr_data(k,6), curr_data(k,7), d);
+%     end
+%     scatter3(curr_data(:,6), curr_data(:,7), curr_data(:,8)+2*i, 'MarkerEdgeColor', colors(i,:), 'Marker', 'x')
+% 
+% %     figure, hold on, axis equal
+% %     for l = 1:length(freqs)
+% %         scatter3(curr_data(curr_data(:,4)==freqs(l),6),curr_data(curr_data(:,4)==freqs(l),7),curr_data(curr_data(:,4)==freqs(l),3),'MarkerEdgeColor', colors(l*floor(size(colors,1)/2),:), 'Marker', '.')
+% %     end
+% end
 
