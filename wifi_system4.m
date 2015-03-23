@@ -1,12 +1,12 @@
 clear all;
 % close all;
 
-if exist('nameAndIdx.mat')
-    delete('nameAndIdx.mat');
-end
-if exist('wifiStationAndIdx.mat')
-    delete('wifiStationAndIdx.mat');
-end
+% if exist('nameAndIdx.mat')
+%     delete('nameAndIdx.mat');
+% end
+% if exist('wifiStationAndIdx.mat')
+%     delete('wifiStationAndIdx.mat');
+% end
 
 % path = './walter-basement-Feb26-part1/';
 path = './walter-basement-Feb26-part2-data/';
@@ -63,10 +63,13 @@ for i = 1:unique_data(end,1)
         ap_data = curr_data(curr_data(:,2)==aps(k),:);
         freqs = unique(ap_data(:,6));
         
-        for l = 1%:length(freqs)
+        for l = 1:length(freqs)
+            if freqs(l)>5000
+                continue;
+            end
             freq_data = ap_data(ap_data(:,6)==freqs(l), :);
-            median_freq_data = median(freq_data,1);
-            temp_data = [temp_data; median_freq_data];
+            mean_freq_data = mean(freq_data,1);
+            temp_data = [temp_data; mean_freq_data];
         end
 %         if length(freqs)==2
 %             r_curr = temp_data(end-1:end,3);
@@ -162,38 +165,120 @@ R = unique_data(:,3);
 D = 10*log10( sqrt((unique_data(:,6)-unique_data(:,9)).^2 ...
                  + (unique_data(:,7)-unique_data(:,10)).^2 ...
                  + (unique_data(:,8)-unique_data(:,11)).^2)...
-               .* unique_data(:,4));
+               );
 
-n_A = [D,-ones(N,1)] \ (-R)
-plot(sort(D),-n_A(1)*sort(D)+n_A(2))
-[m, b] = TheilSen([D,R])
-hold on, plot(sort(D),m*sort(D)+b)
-hold on,plot(D,R,'.')
-
-% figure, axis equal, hold on
-% plot3(g_ba_ci(1,:), g_ba_ci(2,:), g_ba_ci(3,:),'r')
-% %% Plot WIFI position on trajectory
-% plot3(idAndPosition(:,2),idAndPosition(:,3),idAndPosition(:,4),'go')
+n_A = [D,-ones(length(R),1)] \ (-R-20*log10(unique_data(:,4)))
+% [D,ind] = sort(D);
+% plot(D,-n_A(1)*D+n_A(2)-20*log10(mean(unique_data(ind,4))))
+% hold on,plot(D,R(ind),'.')
 
 
-% ap_ids = unique(unique_data(:,2));
-% colors = jet(length(ap_ids));
-% for i = 7
-%     j = ap_ids(i);
-%     curr_data = unique_data(unique_data(:,2)==j,:);
-%     freqs = unique(curr_data(:,4));
-%     for k = 1:size(curr_data,1)
-%         if curr_data(k,4) == freqs(1)
-%             continue;
-%         end
-%         d = 10.^(-curr_data(k,3)/19) *.001;
-%         circle(curr_data(k,6), curr_data(k,7), d);
-%     end
-%     scatter3(curr_data(:,6), curr_data(:,7), curr_data(:,8)+2*i, 'MarkerEdgeColor', colors(i,:), 'Marker', 'x')
+ap_ids = unique(unique_data(:,2));
+colors = jet(length(ap_ids));
+for i = 1%:length(basement_ap_ids)
+    figure, axis equal, hold on
+    plot3(g_ba_ci(1,:), g_ba_ci(2,:), g_ba_ci(3,:),'r')
+    %% Plot WIFI position on trajectory
+    plot3(idAndPosition(:,2),idAndPosition(:,3),idAndPosition(:,4),'go')
+
+    j = ap_ids(i);
+    curr_data = unique_data(unique_data(:,2)==j,:);
+    freqs = unique(curr_data(:,4));
+    for k = 1:size(curr_data,1)
+        d = 10.^((n_A(2)-curr_data(k,3)-20*log10(curr_data(k,4)))/10/n_A(1));
+        circle(curr_data(k,6), curr_data(k,7), sqrt(d^2 - curr_data(k,8)^2));
+    end
+    scatter3(curr_data(:,6), curr_data(:,7), curr_data(:,8)+2*i, 'MarkerEdgeColor', colors(i,:), 'Marker', 'x')
+
+    figure, hold on, axis equal
+    for l = 1:length(freqs)
+        scatter3(curr_data(curr_data(:,4)==freqs(l),6),curr_data(curr_data(:,4)==freqs(l),7),curr_data(curr_data(:,4)==freqs(l),3),'MarkerEdgeColor', colors(l*floor(size(colors,1)/2),:), 'Marker', '.')
+    end
+end
 % 
-% %     figure, hold on, axis equal
-% %     for l = 1:length(freqs)
-% %         scatter3(curr_data(curr_data(:,4)==freqs(l),6),curr_data(curr_data(:,4)==freqs(l),7),curr_data(curr_data(:,4)==freqs(l),3),'MarkerEdgeColor', colors(l*floor(size(colors,1)/2),:), 'Marker', '.')
+% % figure, axis equal
+% for i = 1:length(basement_ap_ids)
+%     j = ap_ids(i);
+%     disp(['station', num2str(j)])
+%     curr_data = unique_data(unique_data(:,2)==j,:);
+%     rssi = R(unique_data(:,2)==j,:);
+%     n_A_pre = n_A;
+% %     for k=1:2
+%         d = 10.^((n_A_pre(2)-rssi-20*log10(curr_data(:,4))) / 10 / n_A_pre(1));
+%         
+%         a=curr_data(:,6).*curr_data(:,6); a = a - mean(a);
+%         b=curr_data(:,7).*curr_data(:,7); b = b - mean(b);
+%         c = d.*d; c = c - mean(c);
+%         e = (a+b-c)/2;
+%         
+%         A = [curr_data(:,6)-mean(curr_data(:,6)), curr_data(:,7)-mean(curr_data(:,7))];
+%         x = A\e;
+%         
+%         z = d.*d - (curr_data(:,6)-x(1)).^2 - (curr_data(:,7)-x(2)).^2;
+%         disp([sum(z<=0), sum(z>0)])
+%         z = z(z>0);
+%         z = sqrt(mean(z)) - mean(curr_data(:,8));
+%         disp([x', z])
+%         
+% %         D = 10*log10( sqrt((curr_data(:,6)-x(1)).^2 ...
+% %             + (curr_data(:,7)-x(2)).^2 ...
+% %             + (curr_data(:,8)-curr_data(:,11)).^2)...
+% %             );
+% %         
+% %         n_A_pre = [D,-ones(length(D),1)] \ (-rssi-20*log10(curr_data(:,4)))
+% % %         n_A_pre(2) = mean(rssi+n_A_pre(1)*D+20*log10(curr_data(:,4)));
+% % %         [D,ind] = sort(D);
+% % %         plot(D,-n_A_pre(1)*D+n_A_pre(2)-20*log10(mean(curr_data(:,4))))
+% % %         hold on,plot(D,rssi(ind),'.')
 % %     end
 % end
-% 
+
+% figure, axis equal, hold on
+% plot(g_ba_ci(1,:), g_ba_ci(2,:),'r')
+% plot(idAndPosition(:,2),idAndPosition(:,3),'go')
+XYZ=[];
+for i = 1:length(basement_ap_ids)
+    j = ap_ids(i);
+    disp(['station', num2str(j)])
+    curr_data = unique_data(unique_data(:,2)==j,:);
+    rssi = unique_data(unique_data(:,2)==j,3);
+    n_A_pre = n_A;
+
+    d = 10.^((n_A_pre(2)-rssi-20*log10(curr_data(:,4))) / 10 / n_A_pre(1));
+    
+    a=curr_data(:,6).*curr_data(:,6); a = a - mean(a);
+    b=curr_data(:,7).*curr_data(:,7); b = b - mean(b);
+    c = d.*d; c = c - mean(c);
+    e = (a+b-c)/2;
+    A = [curr_data(:,6)-mean(curr_data(:,6)), curr_data(:,7)-mean(curr_data(:,7))];
+    x = A\e;
+    
+    z = 1.2;
+    xyz = [x;z];
+    err = 1e9;
+    prev_err = 1e12;
+%     del = .3;
+    while err>1e-3 && (prev_err-err)>1e-3
+        J = [2*(x(1)-curr_data(:,6)), 2*(x(2)-curr_data(:,7)), 2*xyz(3)*ones(size(curr_data,1),1)];
+        r = (x(1)-curr_data(:,6)).^2 + (x(2)-curr_data(:,7)).^2 + xyz(3)^2 - (d).^2;
+%         w = del*(sqrt(1+(r/del).^2)-1);
+%         W=diag(w);
+%         dxyz = (J'*W*J)\(J'*W*r);
+        dxyz = (J'*J)\(J'*r);
+        xyz_prev = xyz;
+        xyz = xyz+dxyz;
+        prev_err = err;
+        err = mean(r.*r);
+    end
+    if prev_err<err
+        xyz=xyz_prev;
+    end
+    disp(xyz')
+    XYZ = [XYZ, xyz];   
+
+end
+
+% plot(XYZ(1,:),XYZ(2,:),'bx')
+% title('AP locations')
+% xlabel('x'), ylabel('y')
+% legend('Trajectory','Ground truth AP locations','Estimated AP locations')

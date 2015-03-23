@@ -1,5 +1,5 @@
 clear all;
-close all;
+% close all;
 
 if exist('nameAndIdx.mat')
     delete('nameAndIdx.mat');
@@ -117,6 +117,7 @@ if dim == 2
     start_ind = test_data_num*2+1;
     x = (A(start_ind:end,:)'*A(start_ind:end,:))\(A(start_ind:end,:)'*b(start_ind:end));
     % model = reshape(x, [2 length(x)/2]);
+    figure, axis equal, 
     plot(g_ba_ci(1,:), g_ba_ci(2,:),'r')
     
     for i=1:N
